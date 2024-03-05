@@ -28,7 +28,7 @@ type Session struct {
 
 	database int32
 
-	quit bool
+	quit bool // 客户端是否发送了 quit 命令，由于 loopReader 是单协程的，所以不用套一层 atomic
 	exit sync.Once
 
 	stats struct {
@@ -111,6 +111,7 @@ var (
 
 var RespOK = redis.NewString([]byte("OK"))
 
+// Start 开始处理来自 Session 的请求
 func (s *Session) Start(d *Router) {
 	s.start.Do(func() {
 		if int(incrSessions()) > s.config.ProxyMaxClients {
@@ -149,6 +150,7 @@ func (s *Session) Start(d *Router) {
 	})
 }
 
+// 针对每次读出来的一批数据调用 handleRequest，处理后送到 tasks 里，tasks 的长度不能超过 session_max_pipeline 定义的值
 func (s *Session) loopReader(tasks *RequestChan, d *Router) (err error) {
 	defer func() {
 		s.CloseReaderWithError(err)
@@ -211,6 +213,7 @@ func (s *Session) loopWriter(tasks *RequestChan) (err error) {
 	)
 
 	p := s.Conn.FlushEncoder()
+	// 这俩参数控制 Flush 的执行时机
 	p.MaxInterval = time.Millisecond
 	p.MaxBuffered = maxPipelineLen / 2
 
@@ -226,6 +229,8 @@ func (s *Session) loopWriter(tasks *RequestChan) (err error) {
 		if err := p.Encode(resp); err != nil {
 			return s.incrOpFails(r, err)
 		}
+
+		// flush 并不一定是每次都发生的，很可能会把一批 resp 聚在一起后再 flush，以此来实现 pipeline
 		fflush := tasks.IsEmpty()
 		if err := p.Flush(fflush); err != nil {
 			return s.incrOpFails(r, err)
@@ -263,6 +268,7 @@ func (s *Session) handleRequest(r *Request, d *Router) error {
 	r.OpFlag = flag
 	r.Broken = &s.broken
 
+	// 一些不被 codis 支持的命令通过 flag 来做
 	if flag.IsNotAllowed() {
 		return fmt.Errorf("command '%s' is not allowed", opstr)
 	}

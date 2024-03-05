@@ -18,7 +18,7 @@ type Request struct {
 
 	Broken *atomic2.Bool
 
-	OpStr string
+	OpStr string // 从 Multi 解析出来的字符串形式的命令
 	OpFlag
 
 	Database int32

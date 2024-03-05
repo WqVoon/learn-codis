@@ -87,6 +87,7 @@ func New(config *Config) (*Proxy, error) {
 		s.Close()
 		return nil, err
 	}
+	s.model.XAuth = s.xauth
 
 	log.Warnf("[%p] create new proxy:\n%s", s, s.model.Encode())
 
@@ -102,6 +103,7 @@ func New(config *Config) (*Proxy, error) {
 	return s, nil
 }
 
+// 做一些更复杂的赋值，包括 lproxy 和 ladmin 两个 listener
 func (s *Proxy) setup(config *Config) error {
 	proto := config.ProtoType
 	if l, err := net.Listen(proto, config.ProxyAddr); err != nil {
@@ -157,6 +159,7 @@ func (s *Proxy) setup(config *Config) error {
 	return nil
 }
 
+// Start 设置 Proxy 的状态为 online，main.go 中将结束等待 online 的循环；同时调用 proxy.router 的 Start 方法
 func (s *Proxy) Start() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -369,6 +372,7 @@ func (s *Proxy) rewatchSentinels(servers []string) {
 	}
 }
 
+// 用 newApiServer 启动一个 http server
 func (s *Proxy) serveAdmin() {
 	if s.IsClosed() {
 		return
@@ -393,6 +397,8 @@ func (s *Proxy) serveAdmin() {
 	}
 }
 
+// 从 lproxy 中获取连接构建 session 并调用 start
+// 如果 BackendPingPeriod 不为 0，启动一个 goroutine 运行 keepAlive
 func (s *Proxy) serveProxy() {
 	if s.IsClosed() {
 		return

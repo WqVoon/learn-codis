@@ -6,6 +6,7 @@ package models
 type Proxy struct {
 	Id        int    `json:"id,omitempty"`
 	Token     string `json:"token"`
+	XAuth     string `json:"x_auth"` // 调试用
 	StartTime string `json:"start_time"`
 	AdminAddr string `json:"admin_addr"`
 

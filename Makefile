@@ -12,7 +12,7 @@ codis-dashboard: codis-deps
 
 codis-proxy: codis-deps
 	go build -o bin/codis-proxy ./cmd/proxy
-	@./bin/codis-proxy --default-config > config/proxy.toml
+	@#./bin/codis-proxy --default-config > config/proxy.toml
 
 codis-admin: codis-deps
 	go build -o bin/codis-admin ./cmd/admin

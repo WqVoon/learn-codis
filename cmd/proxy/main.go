@@ -210,6 +210,7 @@ Options:
 	go func() {
 		defer s.Close()
 		c := make(chan os.Signal, 1)
+		// 这个 syscall.SIGKILL 其实没啥用
 		signal.Notify(c, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 
 		sig := <-c
@@ -227,7 +228,7 @@ Options:
 
 	for !s.IsClosed() && !s.IsOnline() {
 		log.Warnf("[%p] proxy waiting online ...", s)
-		time.Sleep(time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	log.Warnf("[%p] proxy is working ...", s)
