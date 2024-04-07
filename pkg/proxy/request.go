@@ -13,8 +13,10 @@ import (
 
 type Request struct {
 	Multi []*redis.Resp
+
+	// 一个来自客户端的 Request 可能会被拆分成多个 SubRequest，这些 Req 共享 Batch，如果 .Wait 能返回那么所有请求处理完毕
 	Batch *sync.WaitGroup
-	Group *sync.WaitGroup
+	Group *sync.WaitGroup // 引用某个 slot 的 ref 字段，请求处理完后会调用 Done
 
 	Broken *atomic2.Bool
 

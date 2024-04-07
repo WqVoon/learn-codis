@@ -32,6 +32,7 @@ func (d *forwardSync) GetId() int {
 	return models.ForwardSync
 }
 
+// Forward 将 r 对应的请求转发到 slot 对应的 codis-server 上
 func (d *forwardSync) Forward(s *Slot, r *Request, hkey []byte) error {
 	s.lock.RLock()
 	bc, err := d.process(s, r, hkey)
@@ -49,6 +50,7 @@ func (d *forwardSync) process(s *Slot, r *Request, hkey []byte) (*BackendConn, e
 			s.id, hkey)
 		return nil, ErrSlotIsNotReady
 	}
+	// 如果此时处于迁移流程，那么先强制做 key 的迁移，然后再继续执行
 	if s.migrate.bc != nil && len(hkey) != 0 {
 		if err := d.slotsmgrt(s, hkey, r.Database, r.Seed16()); err != nil {
 			log.Debugf("slot-%04d migrate from = %s to %s failed: hash key = '%s', database = %d, error = %s",
@@ -215,6 +217,7 @@ func (d *forwardHelper) slotsmgrtExecWrapper(s *Slot, hkey []byte, database int3
 
 func (d *forwardHelper) forward2(s *Slot, r *Request) *BackendConn {
 	var database, seed = r.Database, r.Seed16()
+	// 如果是非写操作且当前不在迁移过程中，那么可以将请求转发给从库
 	if s.migrate.bc == nil && !r.IsMasterOnly() && len(s.replicaGroups) != 0 {
 		for _, group := range s.replicaGroups {
 			var i = seed

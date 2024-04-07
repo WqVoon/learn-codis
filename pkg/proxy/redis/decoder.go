@@ -235,7 +235,7 @@ func (d *Decoder) decodeMultiBulk() ([]*Resp, error) {
 		return nil, errors.Trace(err)
 	}
 	if RespType(b) != TypeArray {
-		return d.decodeSingleLineMultiBulk()
+		return d.decodeSingleLineMultiBulk() // 也支持非 RESP 协议的请求，也就是用空格分隔的一行字符串
 	}
 	if _, err := d.br.ReadByte(); err != nil {
 		return nil, errors.Trace(err)

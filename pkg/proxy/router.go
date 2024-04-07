@@ -15,6 +15,7 @@ import (
 
 const MaxSlotNum = models.MaxSlotNum
 
+// Router 与一个 Proxy 实例关联起来
 type Router struct {
 	mu sync.RWMutex
 
